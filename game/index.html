@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garuda Senja — Island Ring Run</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="1280" height="720"></canvas>
+  <div id="hud" class="hidden">
+    <div class="hud-cell"><span class="hud-label">ALT</span><span class="hud-value" id="hud-alt">0 ft</span></div>
+    <div class="hud-cell"><span class="hud-label">SPD</span><span class="hud-value" id="hud-spd">0 kt</span></div>
+    <div class="hud-cell"><span class="hud-label">HDG</span><span class="hud-value" id="hud-hdg">000&deg;</span></div>
+    <div class="hud-cell"><span class="hud-label">RINGS</span><span class="hud-value" id="hud-rings">0/6</span></div>
+    <div class="hud-cell"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">5:00</span></div>
+    <div class="hud-cell"><span class="hud-label">SCORE</span><span class="hud-value" id="hud-score">0</span></div>
+  </div>
+  <div id="toast" class="hidden"></div>
+  <div id="overlay">
+    <div id="panel">
+      <h1 id="ov-title">GARUDA SENJA</h1>
+      <p id="ov-sub">Island Ring Run &middot; Nusantara at golden hour</p>
+      <p id="ov-body">Fly your bush plane through all six golden rings over the archipelago,
+        then bring her home and land on the island runway before the clock runs out.
+        Mind the volcano &mdash; and the sea.</p>
+      <p id="ov-stats" class="hidden"></p>
+      <div id="ov-controls">
+        <span><b>W / S</b> throttle</span>
+        <span><b>&uarr; / &darr;</b> pitch</span>
+        <span><b>&larr; / &rarr;</b> roll &amp; turn</span>
+        <span><b>Mouse drag</b> steer</span>
+        <span><b>P</b> pause &nbsp;<b>R</b> restart &nbsp;<b>M</b> sound</span>
+      </div>
+      <button id="ov-btn" type="button">Take Off</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>

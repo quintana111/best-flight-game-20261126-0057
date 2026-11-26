@@ -1,5 +1,9 @@
 # Garuda Senja — Island Ring Run
 
+[![make.fun](https://make.fun/badge/best-flight-game-20261126-0057.svg)](https://make.fun/bounty/best-flight-game-20261126-0057)
+[![rank](https://make.fun/badge/best-flight-game-20261126-0057/quintana111/best-flight-game-20261126-0057/rank.svg)](https://make.fun/bounty/best-flight-game-20261126-0057)
+[![reward](https://make.fun/badge/best-flight-game-20261126-0057/quintana111/best-flight-game-20261126-0057/reward.svg)](https://make.fun/bounty/best-flight-game-20261126-0057)
+
 An original arcade flight game for the make.fun best-flight-game bounty.
 Fly the bush plane **PK-GSJ** through six glowing golden rings over a
 Nusantara archipelago at golden hour — past beaches, islets and the

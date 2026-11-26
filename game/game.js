@@ -38,10 +38,10 @@ const ISLANDS = [
 ];
 const RUNWAY = { x: 60, z: -260, len: 130, wid: 15, padY: 30, hdg: 0 };
 const RINGS = [
-  { x: 60,   y: 52, z: -470, r: 10 },
-  { x: -140, y: 48, z: -560, r: 10 },
+  { x: 60,   y: 80, z: -470, r: 10 },
+  { x: -180, y: 56, z: -620, r: 10 },
   { x: -330, y: 44, z: -330, r: 10 },
-  { x: 60,   y: 66, z: -420, r: 10 }, /* over the volcano crater */
+  { x: 60,   y: 88, z: -420, r: 10 }, /* over the volcano crater */
   { x: 300,  y: 50, z: -430, r: 10 },
   { x: 180,  y: 46, z: -180, r: 10 },
 ];
@@ -66,14 +66,14 @@ function terrainHeight(x, z) {
   return h * (1 - w) + RUNWAY.padY * w;
 }
 /* Island silhouette radius at sea level (gaussian falls below ~0.4 m). */
-function islandCoastR(isl) { return isl.r * 2.2 * Math.sqrt(2 * Math.log(Math.max(isl.peak / 0.4, 1.01))); }
+function islandCoastR(isl) { return (isl.r / 2.2) * Math.sqrt(2 * Math.log(Math.max(isl.peak / 0.4, 1.01))); }
 
 /* Clouds and birds, placed deterministically. */
 const CLOUDS = [];
 for (let i = 0; i < 16; i++) {
   CLOUDS.push({
     x: (rng() - 0.5) * 2200, y: 120 + rng() * 90, z: -1400 + rng() * 1300,
-    s: 40 + rng() * 70, a: 0.5 + rng() * 0.35,
+    s: 30 + rng() * 50, a: 0.4 + rng() * 0.3,
   });
 }
 const BIRDS = [];
@@ -452,7 +452,8 @@ function drawIslands() {
   for (const { isl } of sorted) {
     const coastR = islandCoastR(isl);
     const rings = 6;
-    for (let k = rings; k >= 1; k--) {
+    const innerK = isl.volcano ? 3 : 1; /* leave the crater clear for the cone */
+    for (let k = rings; k >= innerK; k--) {
       const f = k / rings;
       const rr = coastR * f;
       const h = isl.peak * Math.pow(1 - f * f, 1.35);
@@ -470,23 +471,25 @@ function drawIslands() {
 }
 function drawVolcano(isl) {
   /* Shaded cone + crater + lazy smoke above Gunung Senja. */
-  const base = isl.peak * 0.55;
-  const apex = { x: isl.x, y: isl.peak + 4, z: isl.z };
-  const left = { x: isl.x - 42, y: base, z: isl.z + 26 };
-  const right = { x: isl.x + 42, y: base, z: isl.z + 26 };
-  const mid = { x: isl.x + 6, y: base + 6, z: isl.z + 30 };
+  const base = isl.peak * 0.30;
+  const apex = { x: isl.x, y: isl.peak + 10, z: isl.z };
+  const left = { x: isl.x - 70, y: base, z: isl.z + 40 };
+  const right = { x: isl.x + 70, y: base, z: isl.z + 40 };
+  const mid = { x: isl.x + 10, y: base + 10, z: isl.z + 48 };
   poly([apex, left, mid], '#7a5a48');
   poly([apex, mid, right], '#4a352c');
-  poly([
-    { x: isl.x - 12, y: isl.peak + 4, z: isl.z + 8 },
-    { x: isl.x + 12, y: isl.peak + 4, z: isl.z + 8 },
-    { x: isl.x + 5, y: isl.peak - 2, z: isl.z + 14 },
-    { x: isl.x - 5, y: isl.peak - 2, z: isl.z + 14 },
-  ], '#2e2018');
+  /* Crater: a dark notch right at the apex's screen position. */
+  const ap = project(apex);
+  if (ap) {
+    ctx.save();
+    ctx.fillStyle = '#2e2018';
+    ctx.beginPath(); ctx.ellipse(ap.x, ap.y + 1, Math.max(6, 5 * ap.s * 0.02), Math.max(3, 2.5 * ap.s * 0.02), 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
   /* Smoke puffs. */
   const t = state.elapsed;
   for (let i = 0; i < 3; i++) {
-    const p = project({ x: isl.x + Math.sin(t * 0.3 + i * 2.1) * 8, y: isl.peak + 12 + i * 9 + (t * 2 % 6), z: isl.z });
+    const p = project({ x: isl.x + Math.sin(t * 0.3 + i * 2.1) * 8, y: isl.peak + 26 + i * 9 + (t * 2 % 6), z: isl.z });
     if (!p) continue;
     ctx.save();
     ctx.globalAlpha = 0.35 - i * 0.08;
@@ -709,6 +712,8 @@ function drawArtificialHorizon(x, y, r) {
   ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
   ctx.restore();
   ctx.fillStyle = '#ffcf7d'; ctx.font = '700 11px Verdana, sans-serif'; ctx.textAlign = 'center';
+  ctx.strokeStyle = 'rgba(10,10,30,0.9)'; ctx.lineWidth = 3;
+  ctx.strokeText('ATTITUDE', x, y + r + 15);
   ctx.fillText('ATTITUDE', x, y + r + 15);
 }
 function drawCompass(x, y, w) {
@@ -731,7 +736,7 @@ function drawCompass(x, y, w) {
   ctx.fillStyle = '#ff5a3c';
   ctx.beginPath(); ctx.moveTo(x - 6, y - 18); ctx.lineTo(x + 6, y - 18); ctx.lineTo(x, y - 8); ctx.closePath(); ctx.fill();
 }
-function drawTape(x, y, w, h, value, max, label, unit, format) {
+function drawTape(x, y, w, h, value, max, label, unit, format, min) {
   ctx.save();
   ctx.fillStyle = 'rgba(8,12,34,0.72)';
   ctx.strokeStyle = 'rgba(255,190,90,0.6)'; ctx.lineWidth = 1.5;
@@ -741,7 +746,9 @@ function drawTape(x, y, w, h, value, max, label, unit, format) {
   ctx.font = '700 12px Verdana, sans-serif'; ctx.textAlign = 'left';
   const step = max > 400 ? 100 : 10;
   const span = max > 400 ? 400 : 40;
+  const lo = min === undefined ? -Infinity : min;
   for (let v = Math.floor((value - span) / step) * step; v <= value + span; v += step) {
+    if (v < lo) continue;
     const dy = mid - (v - value) * (h / (span * 2));
     if (dy < y + 4 || dy > y + h - 4) continue;
     ctx.fillStyle = '#e8e0cc';
@@ -756,6 +763,8 @@ function drawTape(x, y, w, h, value, max, label, unit, format) {
   ctx.font = '700 13px Verdana, sans-serif'; ctx.textAlign = 'center';
   ctx.fillText(format(value), x + w / 2, y - 8);
   ctx.fillStyle = '#ffcf7d'; ctx.font = '700 11px Verdana, sans-serif';
+  ctx.strokeStyle = 'rgba(10,10,30,0.9)'; ctx.lineWidth = 3;
+  ctx.strokeText(label + ' ' + unit, x + w / 2, y + h + 15);
   ctx.fillText(label + ' ' + unit, x + w / 2, y + h + 15);
 }
 function roundRect(x, y, w, h, r) {
@@ -776,6 +785,8 @@ function drawThrottle(x, y, w, h) {
   ctx.fillStyle = '#ff9d2e';
   roundRect(x + 5, y + h - 6 - fh, w - 10, fh, 4); ctx.fill();
   ctx.fillStyle = '#ffcf7d'; ctx.font = '700 11px Verdana, sans-serif'; ctx.textAlign = 'center';
+  ctx.strokeStyle = 'rgba(10,10,30,0.9)'; ctx.lineWidth = 3;
+  ctx.strokeText('THR ' + Math.round(state.throttle * 100) + '%', x + w / 2, y + h + 15);
   ctx.fillText('THR ' + Math.round(state.throttle * 100) + '%', x + w / 2, y + h + 15);
   ctx.restore();
 }
@@ -785,8 +796,8 @@ function drawInstruments() {
   drawCompass(W / 2, panelY + 44, 330);
   const altFt = state.pos.y * 3.28084;
   const spdKt = state.speed * 1.94384;
-  drawTape(W - 250, panelY + 8, 96, 84, Math.round(altFt), 5000, 'ALT', 'ft', (v) => String(Math.round(v)));
-  drawTape(W - 140, panelY + 8, 96, 84, Math.round(spdKt), 200, 'SPD', 'kt', (v) => String(Math.round(v)));
+  drawTape(W - 250, panelY + 8, 96, 84, Math.round(altFt), 5000, 'ALT', 'ft', (v) => String(Math.round(v)), 0);
+  drawTape(W - 140, panelY + 8, 96, 84, Math.round(spdKt), 200, 'SPD', 'kt', (v) => String(Math.round(v)), 0);
   drawThrottle(170, panelY + 8, 34, 84);
   /* Next-ring guidance. */
   if (state.mode === 'playing' && state.ringIdx < RINGS.length) {
@@ -795,7 +806,7 @@ function drawInstruments() {
     ctx.fillStyle = '#ffe9b0';
     ctx.font = '700 16px "Segoe UI", Verdana, sans-serif'; ctx.textAlign = 'center';
     ctx.shadowColor = '#ff9d2e'; ctx.shadowBlur = 8;
-    ctx.fillText('NEXT RING ' + Math.round(d) + ' m', W / 2, 96);
+    ctx.fillText('NEXT RING ' + Math.round(d) + ' m', W / 2, 132);
     ctx.shadowBlur = 0;
     /* Off-screen arrow toward the ring. */
     const c = project(ring);
@@ -813,7 +824,7 @@ function drawInstruments() {
     ctx.fillStyle = '#b8ff9d';
     ctx.font = '700 17px "Segoe UI", Verdana, sans-serif'; ctx.textAlign = 'center';
     ctx.shadowColor = '#5fae3f'; ctx.shadowBlur = 8;
-    ctx.fillText('ALL RINGS CLEAR — LAND ON THE RUNWAY', W / 2, 96);
+    ctx.fillText('ALL RINGS CLEAR — LAND ON THE RUNWAY', W / 2, 132);
     ctx.shadowBlur = 0;
   }
 }
@@ -840,7 +851,7 @@ function render() {
   drawRunway();
   drawRings();
   drawPlane();
-  if (state.mode === 'playing' || state.mode === 'paused') drawInstruments();
+  if (state.mode === 'playing' || state.mode === 'paused' || state.mode === 'title' || state.mode === 'won' || state.mode === 'lost') drawInstruments();
   if (state.toast && state.elapsed > state.toastUntil) { state.toast = ''; hideToast(); }
 }
 let last = performance.now();
@@ -866,15 +877,13 @@ function applyShot() {
       '', 'Take Off');
     hud.classList.add('hidden');
   } else if (SHOT === 'play') {
-    /* Mid-flight, ring 4 (over the volcano) dead ahead, instruments lit. */
+    /* Mid-flight, ring 6 dead ahead with the main island and runway beyond. */
     state.mode = 'playing';
-    state.pos = { x: -60, y: 58, z: -520 };
-    state.hdg = 0.35; state.pitch = 0.05; state.roll = -0.18;
+    state.pos = { x: 180, y: 55, z: -40 };
+    state.hdg = 0.02; state.pitch = 0.02; state.roll = -0.1;
     state.speed = 52; state.throttle = 0.8;
-    state.ringIdx = 3; state.score = 450; state.timeLeft = 212;
+    state.ringIdx = 5; state.score = 750; state.timeLeft = 118;
     hideOverlay(); hud.classList.remove('hidden');
-    showToast('Ring 4 of 6 — +150 pts!', 999);
-    state.toastUntil = 1e9;
   } else if (SHOT === 'runway') {
     /* Low pass over the runway, all rings done, gear-down approach. */
     state.mode = 'playing';

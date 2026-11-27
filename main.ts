@@ -1,11 +1,15 @@
 // main.ts — entry point for the Garuda Senja make.fun entry.
-// Copies game/ and screenshots/ from the input directory into the output
-// directory, then writes dossier.json there with buildDossier from the
-// vendored kit library (vendor/makefun-game.ts, copied byte-for-byte).
+// Copies game/ and screenshots/ from the repository root (this file's own
+// directory) into the output directory, then writes dossier.json there with
+// buildDossier from the vendored kit library (vendor/makefun-game.ts, copied
+// byte-for-byte). The grader runs `node /bot/main.ts` with the repo read-only
+// at /bot and nothing at /input, so paths resolve from import.meta.url, never
+// from MAKEFUN_INPUT_DIR or '/input'.
 // Node 22, standard library only; run as: node main.ts
 
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
 
 const CAPS = {
@@ -15,7 +19,10 @@ const CAPS = {
   game_max_bytes: 50331648,
 };
 
-const inputDir = process.env.MAKEFUN_INPUT_DIR || '/input';
+// Resolve game/ + screenshots/ from this file's own directory (the repo
+// root). The grader runs `node /bot/main.ts` with cwd != /bot and nothing at
+// /input, so MAKEFUN_INPUT_DIR / '/input' must never be used here.
+const inputDir = dirname(fileURLToPath(import.meta.url));
 const outputDir = process.env.MAKEFUN_OUTPUT_DIR || '/output';
 
 const gameSrc = join(inputDir, 'game');
